@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Race Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .game-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .race-track {
+            background: #2d3748;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lane {
+            height: 80px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .cat {
+            width: 60px;
+            height: 60px;
+            position: absolute;
+            left: 10px;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transition: left 0.1s ease-out;
+            z-index: 10;
+        }
+
+        .finish-line {
+            position: absolute;
+            right: 20px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: repeating-linear-gradient(
+                0deg,
+                #fff 0px,
+                #fff 10px,
+                #000 10px,
+                #000 20px
+            );
+            z-index: 5;
+        }
+
+        .cat-info {
+            margin-left: 80px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .bet-section {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .bet-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        .bet-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .bet-button.selected {
+            background: #48bb78;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .start-button {
+            padding: 15px 40px;
+            font-size: 1.3em;
+            background: linear-gradient(45deg, #48bb78, #38a169);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+
+        .start-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .start-button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .reset-button {
+            padding: 15px 40px;
+            font-size: 1.3em;
+            background: linear-gradient(45deg, #e53e3e, #c53030);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+
+        .reset-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-status {
+            text-align: center;
+            font-size: 1.3em;
+            margin: 20px 0;
+            font-weight: bold;
+            min-height: 30px;
+        }
+
+        .winner-announcement {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .score {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 15px;
+            }
+            
+            .bet-section {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .bet-button {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🏁 Cat Race Championship 🏁</h1>
+        
+        <div class="score">
+            <div>💰 Coins: <span id="coins">100</span> | 🏆 Wins: <span id="wins">0</span> | 📊 Races: <span id="races">0</span></div>
+        </div>
+
+        <div class="race-track">
+            <div class="finish-line"></div>
+            
+            <div class="lane" id="lane1">
+                <div class="cat" id="cat1">🐱</div>
+                <div class="cat-info">Whiskers - The Speedy Tabby</div>
+            </div>
+            
+            <div class="lane" id="lane2">
+                <div class="cat" id="cat2">🐈</div>
+                <div class="cat-info">Shadow - The Mysterious Black Cat</div>
+            </div>
+            
+            <div class="lane" id="lane3">
+                <div class="cat" id="cat3">🐈‍⬛</div>
+                <div class="cat-info">Mittens - The Fluffy Champion</div>
+            </div>
+            
+            <div class="lane" id="lane4">
+                <div class="cat" id="cat4">😸</div>
+                <div class="cat-info">Ginger - The Happy Runner</div>
+            </div>
+        </div>
+
+        <div class="game-status" id="gameStatus">Choose your favorite cat and place your bet!</div>
+
+        <div class="bet-section">
+            <button class="bet-button" onclick="selectCat(1)">Bet on Whiskers (2x)</button>
+            <button class="bet-button" onclick="selectCat(2)">Bet on Shadow (3x)</button>
+            <button class="bet-button" onclick="selectCat(3)">Bet on Mittens (2.5x)</button>
+            <button class="bet-button" onclick="selectCat(4)">Bet on Ginger (2x)</button>
+        </div>
+
+        <div class="controls">
+            <button class="start-button" id="startBtn" onclick="startRace()">🏁 Start Race!</button>
+            <button class="reset-button" onclick="resetRace()">🔄 Reset</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedCat = null;
+        let raceInProgress = false;
+        let coins = 100;
+        let wins = 0;
+        let totalRaces = 0;
+        let betAmount = 10;
+
+        const cats = [
+            { id: 1, name: 'Whiskers', emoji: '🐱', multiplier: 2.0 },
+            { id: 2, name: 'Shadow', emoji: '🐈', multiplier: 3.0 },
+            { id: 3, name: 'Mittens', emoji: '🐈‍⬛', multiplier: 2.5 },
+            { id: 4, name: 'Ginger', emoji: '😸', multiplier: 2.0 }
+        ];
+
+        function updateDisplay() {
+            document.getElementById('coins').textContent = coins;
+            document.getElementById('wins').textContent = wins;
+            document.getElementById('races').textContent = totalRaces;
+        }
+
+        function selectCat(catId) {
+            if (raceInProgress) return;
+            
+            if (coins < betAmount) {
+                document.getElementById('gameStatus').textContent = 'Not enough coins! You need at least 10 coins to bet.';
+                return;
+            }
+
+            // Remove previous selection
+            document.querySelectorAll('.bet-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Add selection to clicked button
+            event.target.classList.add('selected');
+            selectedCat = catId;
+            
+            const cat = cats.find(c => c.id === catId);
+            document.getElementById('gameStatus').textContent = 
+                `You selected ${cat.name}! Bet: ${betAmount} coins (Win: ${betAmount * cat.multiplier} coins)`;
+        }
+
+        function startRace() {
+            if (!selectedCat) {
+                document.getElementById('gameStatus').textContent = 'Please select a cat first!';
+                return;
+            }
+
+            if (coins < betAmount) {
+                document.getElementById('gameStatus').textContent = 'Not enough coins to bet!';
+                return;
+            }
+
+            raceInProgress = true;
+            coins -= betAmount;
+            totalRaces++;
+            updateDisplay();
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('gameStatus').textContent = 'Race in progress... 🏃‍♂️💨';
+
+            // Reset cat positions
+            resetCatPositions();
+
+            // Remove any previous winner announcements
+            const existingWinner = document.querySelector('.winner-announcement');
+            if (existingWinner) {
+                existingWinner.remove();
+            }
+
+            // Start the race animation
+            const raceInterval = setInterval(() => {
+                let winner = null;
+                const trackWidth = document.querySelector('.lane').offsetWidth - 80;
+
+                for (let i = 1; i <= 4; i++) {
+                    const cat = document.getElementById(`cat${i}`);
+                    const currentLeft = parseInt(cat.style.left) || 10;
+                    
+                    // Random speed with some cats having slight advantages
+                    let speed = Math.random() * 8 + 2;
+                    
+                    // Give slight speed boosts to certain cats randomly
+                    if (Math.random() < 0.1) {
+                        speed *= 1.5;
+                    }
+
+                    const newLeft = currentLeft + speed;
+                    cat.style.left = newLeft + 'px';
+
+                    // Check if cat reached finish line
+                    if (newLeft >= trackWidth - 20 && !winner) {
+                        winner = i;
+                    }
+                }
+
+                if (winner) {
+                    clearInterval(raceInterval);
+                    endRace(winner);
+                }
+            }, 50);
+        }
+
+        function endRace(winnerCatId) {
+            raceInProgress = false;
+            document.getElementById('startBtn').disabled = false;
+
+            const winnerCat = cats.find(c => c.id === winnerCatId);
+            
+            // Create winner announcement
+            const winnerDiv = document.createElement('div');
+            winnerDiv.className = 'winner-announcement';
+            
+            let resultText = `🎉 ${winnerCat.name} ${winnerCat.emoji} wins the race! 🎉`;
+            
+            if (selectedCat === winnerCatId) {
+                const winnings = betAmount * winnerCat.multiplier;
+                coins += winnings;
+                wins++;
+                resultText += `<br>🎊 Congratulations! You won ${winnings} coins! 🎊`;
+                document.getElementById('gameStatus').textContent = `You won! +${winnings} coins`;
+            } else {
+                const selectedCatName = cats.find(c => c.id === selectedCat).name;
+                resultText += `<br>😿 Better luck next time! You bet on ${selectedCatName}.`;
+                document.getElementById('gameStatus').textContent = `You lost this time. Try again!`;
+            }
+
+            winnerDiv.innerHTML = resultText;
+            document.querySelector('.controls').parentNode.insertBefore(winnerDiv, document.querySelector('.controls'));
+
+            updateDisplay();
+            selectedCat = null;
+            
+            // Remove selection from buttons
+            document.querySelectorAll('.bet-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Auto-reset after a few seconds
+            setTimeout(resetRace, 3000);
+        }
+
+        function resetCatPositions() {
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`cat${i}`).style.left = '10px';
+            }
+        }
+
+        function resetRace() {
+            raceInProgress = false;
+            selectedCat = null;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('gameStatus').textContent = 'Choose your favorite cat and place your bet!';
+            
+            resetCatPositions();
+            
+            // Remove winner announcement
+            const winnerDiv = document.querySelector('.winner-announcement');
+            if (winnerDiv) {
+                winnerDiv.remove();
+            }
+
+            // Remove selection from buttons
+            document.querySelectorAll('.bet-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+        }
+
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html>
