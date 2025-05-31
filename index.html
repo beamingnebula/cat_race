@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer Cat Race</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <title>Multiplayer Cat Race - Enhanced</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="https://placehold.co/32x32/000000/FFFFFF?text=🐾">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -67,8 +67,6 @@
         .btn-purple { @apply bg-purple-500 hover:bg-purple-600 text-white; }
         .btn-indigo { @apply bg-indigo-500 hover:bg-indigo-600 text-white; }
         .btn-slate { @apply bg-slate-500 hover:bg-slate-600 text-white; }
-
-
     </style>
 </head>
 <body class="bg-gradient-to-br from-teal-400 to-cyan-600 min-h-screen flex flex-col items-center justify-center p-4 text-white">
@@ -92,7 +90,7 @@
                     <input type="text" id="catName" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-cyan-500 focus:border-cyan-500" placeholder="Zoomer">
                 </div>
             </div>
-             <div class="mb-6">
+            <div class="mb-6">
                 <label class="block text-sm font-medium text-slate-700 mb-1">Choose Your Champion:</label>
                 <div class="flex items-center gap-3 bg-slate-100 p-2 rounded-lg">
                     <button id="prevCatEmojiBtn" class="btn bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 text-xl">⬅️</button>
@@ -114,7 +112,7 @@
                 <h2 class="text-xl font-semibold text-teal-700 mb-3">Join Existing Race</h2>
                 <div id="gamesList" class="space-y-3 max-h-60 overflow-y-auto bg-white p-3 rounded-lg border border-slate-200 shadow-inner">
                     <p class="text-slate-500 p-2">No available races. Why not create one?</p>
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -125,12 +123,12 @@
             </div>
 
             <div class="text-center mb-4">
-                 <button id="startGameBtn" class="hidden btn btn-yellow py-3 px-8 text-lg">Start Race!</button>
+                <button id="startGameBtn" class="hidden btn btn-yellow py-3 px-8 text-lg">Start Race!</button>
             </div>
 
             <div id="raceTrack" class="w-full bg-green-300 p-4 rounded-lg shadow-inner border-2 border-green-400 relative mb-6 space-y-2 overflow-hidden">
                 <div class="finish-line"></div>
-                </div>
+            </div>
             <div id="raceMessages" class="mb-4 text-center text-lg font-semibold text-purple-700 min-h-[1.5em]"></div>
 
             <div class="text-center space-y-3">
@@ -154,31 +152,35 @@
         </div>
     </div>
 
-
     <script type="module">
+        // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuration & Global Variables ---
+        // Firebase configuration is provided by the environment.
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
+        // App ID is provided by the environment.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'cat-race-default-app-id';
 
-        let app;
-        let auth;
-        let db;
-        let currentUserId = null;
-        let currentGameId = null;
+        let app; // Firebase app instance
+        let auth; // Firebase Auth instance
+        let db; // Firestore instance
+        let currentUserId = null; // Current authenticated user's ID
+        let currentGameId = null; // ID of the currently joined game
+
+        // Listeners for real-time updates
         let unsubscribeGameListener = null;
         let unsubscribeGamesListListener = null;
-        let boostCooldownTimeout = null;
 
-        const BOOST_COOLDOWN = 3000; // 3 seconds
-        const CAT_EMOJIS = ['🐱', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '🐈', '🦁', '🐅', '🐆'];
-        let currentEmojiIndex = 0;
-        let selectedCatEmoji = CAT_EMOJIS[currentEmojiIndex];
-        const MAX_PLAYERS = 4;
+        let boostCooldownTimeout = null; // Timeout for boost cooldown UI update
 
+        const BOOST_COOLDOWN = 3000; // 3 seconds cooldown for boosting
+        const CAT_EMOJIS = ['�', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '🐈', '🦁', '🐅', '🐆'];
+        let currentEmojiIndex = 0; // Index of the currently selected cat emoji
+        let selectedCatEmoji = CAT_EMOJIS[currentEmojiIndex]; // The selected cat emoji
+        const MAX_PLAYERS = 4; // Maximum number of players allowed in a race
 
         // --- UI Elements ---
         const loadingScreen = document.getElementById('loadingScreen');
@@ -208,6 +210,12 @@
         const modalCloseBtn = document.getElementById('modalCloseBtn');
 
         // --- Utility Functions ---
+
+        /**
+         * Displays a custom modal message to the user.
+         * @param {string} title - The title of the modal.
+         * @param {string} message - The message content of the modal.
+         */
         function showModal(title, message) {
             modalTitle.textContent = title;
             modalMessage.textContent = message;
@@ -218,55 +226,29 @@
             }, 10);
         }
 
+        // Event listener for closing the modal
         modalCloseBtn.addEventListener('click', () => {
             messageModal.classList.add('opacity-0');
+            modalCloseBtn.disabled = true; // Disable to prevent multiple clicks while closing
             messageModal.querySelector('div').classList.add('scale-95');
-            setTimeout(() => messageModal.classList.add('hidden'), 300);
+            setTimeout(() => {
+                messageModal.classList.add('hidden');
+                modalCloseBtn.disabled = false; // Re-enable after fully hidden
+            }, 300);
         });
 
+        /**
+         * Updates the displayed cat emoji based on `currentEmojiIndex`.
+         */
         function updateSelectedCatEmojiDisplay() {
             selectedCatEmoji = CAT_EMOJIS[currentEmojiIndex];
             selectedCatEmojiDisplay.textContent = selectedCatEmoji;
         }
 
-        // --- Firebase Initialization and Auth ---
-        async function initializeFirebase() {
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                // import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"; // For debugging
-                // setLogLevel('debug');
-
-                await setPersistence(auth, browserLocalPersistence);
-
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        currentUserId = user.uid;
-                        userIdDisplay.textContent = currentUserId;
-                        console.log("User authenticated with UID:", currentUserId);
-                        loadInitialData();
-                        showScreen('setup');
-                    } else {
-                        console.log("User not signed in, attempting auth.");
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    }
-                    loadingScreen.classList.add('opacity-0');
-                    setTimeout(() => loadingScreen.classList.add('hidden'), 300);
-                    gameContainer.classList.remove('hidden');
-                });
-            } catch (error) {
-                console.error("Firebase initialization error:", error);
-                showModal("Initialization Error", "Could not initialize the game. Please try again. Details: " + error.message);
-                loadingScreen.innerHTML = `<p class="text-red-500 text-xl p-4">Error loading game: ${error.message}</p>`;
-            }
-        }
-
-        // --- Screen Management ---
+        /**
+         * Switches between game screens (setup or race).
+         * @param {string} screenName - The name of the screen to show ('setup' or 'race').
+         */
         function showScreen(screenName) {
             setupScreen.classList.add('hidden');
             raceScreen.classList.add('hidden');
@@ -278,14 +260,105 @@
         }
 
         // --- Game Logic ---
+
+        /**
+         * Returns a reference to the Firestore collection where game data is stored.
+         * Uses the public data path for collaborative games.
+         * @returns {CollectionReference} Firestore collection reference.
+         */
         function getGamesCollectionRef() {
             return collection(db, `artifacts/${appId}/public/data/catRaces`);
         }
 
+        /**
+         * Returns a reference to a specific game document in Firestore.
+         * @param {string} gameId - The ID of the game document.
+         * @returns {DocumentReference} Firestore document reference.
+         */
         function getGameDocRef(gameId) {
             return doc(db, `artifacts/${appId}/public/data/catRaces`, gameId);
         }
 
+        /**
+         * Resets the local state of the race, clearing current game ID, listeners, and UI.
+         * Switches back to the setup screen.
+         */
+        function resetRaceState() {
+            currentGameId = null; // Clear current game ID
+            if (unsubscribeGameListener) {
+                unsubscribeGameListener(); // Unsubscribe from the game listener
+                unsubscribeGameListener = null;
+            }
+            raceTrackDiv.innerHTML = '<div class="finish-line"></div>'; // Clear track visually
+            raceMessages.textContent = "";
+            boostCooldownText.textContent = "";
+            boostBtn.disabled = true;
+            startGameBtn.classList.add('hidden');
+            playAgainBtn.classList.add('hidden');
+            if (boostCooldownTimeout) {
+                clearTimeout(boostCooldownTimeout); // Clear any active boost cooldown timer
+                boostCooldownTimeout = null;
+            }
+            showScreen('setup'); // Go back to the setup screen
+            listenToAvailableGames(); // Refresh the list of available games
+        }
+
+        /**
+         * Sets up a real-time listener for the list of available games.
+         * Updates the UI with games that are waiting or in progress.
+         */
+        function listenToAvailableGames() {
+            if (unsubscribeGamesListListener) unsubscribeGamesListListener(); // Unsubscribe from previous listener
+
+            // Query for games that are not yet finished
+            const q = query(getGamesCollectionRef(), where("status", "!=", "finished")); 
+
+            unsubscribeGamesListListener = onSnapshot(q, (querySnapshot) => {
+                gamesListDiv.innerHTML = ''; // Clear existing list
+                if (querySnapshot.empty) {
+                    gamesListDiv.innerHTML = '<p class="text-slate-500 p-2">No available races. Why not create one?</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const game = doc.data();
+                    const gameId = doc.id;
+                    const playerCount = Object.keys(game.players || {}).length;
+                    const maxPlayers = MAX_PLAYERS;
+
+                    const gameItem = document.createElement('div');
+                    gameItem.className = 'flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg shadow-sm';
+                    gameItem.innerHTML = `
+                        <div>
+                            <h3 class="font-semibold text-slate-800">${game.name}</h3>
+                            <p class="text-sm text-slate-600">
+                                Creator: ${game.players[game.creatorId]?.name || 'Unknown'} 
+                                ${game.status === 'waiting' ? `(${playerCount}/${maxPlayers} players)` : '(In Progress)'}
+                            </p>
+                        </div>
+                        <button class="btn btn-blue join-game-btn" data-game-id="${gameId}" ${game.status === 'in-progress' && !game.players[currentUserId] ? 'data-spectate="true"' : ''}>
+                            ${game.status === 'in-progress' && !game.players[currentUserId] ? 'Spectate' : 'Join'}
+                        </button>
+                    `;
+                    gamesListDiv.appendChild(gameItem);
+                });
+
+                // Add event listeners to newly created join buttons
+                document.querySelectorAll('.join-game-btn').forEach(button => {
+                    button.onclick = () => {
+                        const gameId = button.dataset.gameId;
+                        joinGame(gameId);
+                    };
+                });
+            }, (error) => {
+                console.error("Error listening to available games:", error);
+                showModal("Game List Error", "Could not load available races. " + error.message);
+            });
+        }
+
+        /**
+         * Creates a new multiplayer race game in Firestore.
+         */
         async function createGame() {
             if (!currentUserId) {
                 showModal("Authentication Error", "You must be signed in to create a game.");
@@ -302,7 +375,7 @@
             createGameBtn.textContent = "Creating...";
 
             try {
-                const newGameRef = doc(getGamesCollectionRef()); // Auto-generate ID
+                const newGameRef = doc(getGamesCollectionRef()); // Auto-generate ID for the new game
                 const initialPlayer = {
                     id: currentUserId,
                     name: pName,
@@ -314,15 +387,15 @@
                 await setDoc(newGameRef, {
                     name: gameName,
                     creatorId: currentUserId,
-                    status: "waiting", // waiting, in-progress, finished
+                    status: "waiting", // Game status: waiting, in-progress, finished
                     winner: null,
-                    createdAt: serverTimestamp(),
-                    players: { [currentUserId]: initialPlayer },
-                    originalPlayerIds: [currentUserId], // For play again logic
-                    trackLength: 100
+                    createdAt: serverTimestamp(), // Timestamp for sorting/display
+                    players: { [currentUserId]: initialPlayer }, // Map of players by their user ID
+                    originalPlayerIds: [currentUserId], // Keep track of players who started the game
+                    trackLength: 100 // Total length of the race track
                 });
                 console.log("Game created with ID:", newGameRef.id);
-                joinGame(newGameRef.id); // Auto-join after creation
+                joinGame(newGameRef.id); // Auto-join the created game
             } catch (error) {
                 console.error("Error creating game:", error);
                 showModal("Creation Error", "Could not create race. " + error.message);
@@ -332,15 +405,20 @@
             }
         }
 
+        /**
+         * Joins an existing game or spectates if the game is in progress and the user isn't a player.
+         * @param {string} gameId - The ID of the game to join.
+         */
         async function joinGame(gameId) {
             if (!currentUserId) { showModal("Authentication Error", "You must be signed in to join a game."); return; }
+            // If already in a game, leave it first
             if (currentGameId && currentGameId !== gameId) { await leaveCurrentGame(); }
 
             const pName = playerNameInput.value.trim() || "Player " + currentUserId.substring(0,4);
             const cName = catNameInput.value.trim() || "Cat " + currentUserId.substring(0,4);
             if (!pName || !cName) { showModal("Input Required", "Please enter your name and cat's name before joining."); return; }
 
-            currentGameId = gameId;
+            currentGameId = gameId; // Set the current game ID
             console.log(`Attempting to join/spectate game: ${gameId} as user: ${currentUserId}`);
 
             try {
@@ -358,6 +436,7 @@
                             // Allow joining as spectator, no changes to Firestore needed for this type of spectator
                             console.log(`User ${currentUserId} is spectating game ${gameId}`);
                         } else if (gameData.status === "waiting") {
+                            // If game is waiting, add player if not full
                             if (Object.keys(gameData.players).length >= MAX_PLAYERS) {
                                 throw new Error(`Race is full! Max ${MAX_PLAYERS} players.`);
                             }
@@ -365,6 +444,7 @@
                                 id: currentUserId, name: pName, catName: cName,
                                 catEmoji: selectedCatEmoji, position: 0, lastBoostTime: null
                             };
+                            // Add current user to originalPlayerIds if not already there
                             const updatedOriginalPlayerIds = Array.from(new Set([...(gameData.originalPlayerIds || []), currentUserId]));
                             transaction.update(gameRef, {
                                 [`players.${currentUserId}`]: newPlayer,
@@ -372,12 +452,13 @@
                             });
                         }
                     } else {
+                        // If user is already in the players list (rejoining after refresh/disconnect)
                         console.log(`User ${currentUserId} is rejoining game ${gameId}`);
                     }
                 });
 
-                showScreen('race');
-                listenToGameUpdates(gameId);
+                showScreen('race'); // Switch to the race screen
+                listenToGameUpdates(gameId); // Start listening for real-time updates for this game
 
             } catch (error) {
                 console.error("Error joining game:", error);
@@ -386,46 +467,57 @@
             }
         }
         
+        /**
+         * Sets up a real-time listener for updates to the current game document.
+         * Updates UI based on game status, player positions, and cooldowns.
+         * @param {string} gameId - The ID of the game to listen to.
+         */
         function listenToGameUpdates(gameId) {
-            if (unsubscribeGameListener) unsubscribeGameListener();
+            if (unsubscribeGameListener) unsubscribeGameListener(); // Unsubscribe from previous listener if any
             
             const gameRef = getGameDocRef(gameId);
             unsubscribeGameListener = onSnapshot(gameRef, (docSnapshot) => {
                 if (!docSnapshot.exists()) {
+                    // If the game document no longer exists (e.g., deleted by creator)
                     showModal("Race Ended", "The race you were in no longer exists.");
                     showScreen('setup');
                     resetRaceState();
                     return;
                 }
                 const gameData = docSnapshot.data();
-                gameNameDisplay.textContent = gameData.name;
-                updateRaceTrack(gameData.players, gameData.trackLength);
+                gameNameDisplay.textContent = gameData.name; // Update game name display
+                updateRaceTrack(gameData.players, gameData.trackLength); // Update cat positions on track
 
                 const myPlayerData = gameData.players[currentUserId];
                 const isSpectator = !myPlayerData && gameData.status === "in-progress";
 
-                // Reset buttons visibility first
+                // Reset buttons visibility and boost state
                 startGameBtn.classList.add('hidden');
                 playAgainBtn.classList.add('hidden');
-                boostBtn.disabled = true; // Disable by default, enable if conditions met
+                boostBtn.disabled = true; // Disable by default
 
                 if (isSpectator) {
                     raceMessages.textContent = "You are spectating 👀";
                     boostCooldownText.textContent = "Spectators can't boost.";
                 } else if (gameData.status === "finished" && gameData.winner) {
+                    // Race finished, display winner
                     const winnerPlayer = gameData.players[gameData.winner];
                     raceMessages.textContent = winnerPlayer ? `${winnerPlayer.catName} (${winnerPlayer.name}) wins! 🏆` : "Race Finished!";
                     boostCooldownText.textContent = "Race Over!";
-                    if (myPlayerData && gameData.creatorId === currentUserId) { // Only creator sees play again for now
-                         playAgainBtn.classList.remove('hidden');
+                    // Only the creator can see the "Play Again" button
+                    if (myPlayerData && gameData.creatorId === currentUserId) {
+                        playAgainBtn.classList.remove('hidden');
                     }
                 } else if (gameData.status === "in-progress") {
+                    // Race in progress, enable boost if ready
                     raceMessages.textContent = "Race is ON! Go go go!";
-                    if (myPlayerData) { // Player is in the game
+                    if (myPlayerData) { // Current user is an active player
                         const now = Date.now();
                         if (myPlayerData.lastBoostTime && (now - myPlayerData.lastBoostTime < BOOST_COOLDOWN)) {
-                            setBoostCooldownUI(myPlayerData.lastBoostTime, gameData); // Pass gameData
+                            // Boost is on cooldown, update UI
+                            setBoostCooldownUI(myPlayerData.lastBoostTime, gameData);
                         } else {
+                            // Boost is ready
                             boostBtn.disabled = false;
                             boostCooldownText.textContent = "Boost Ready!";
                         }
@@ -433,23 +525,32 @@
                         boostCooldownText.textContent = "Can't boost now.";
                     }
                 } else if (gameData.status === "waiting") {
+                    // Game is waiting for players
                     raceMessages.textContent = `Waiting for players... (${Object.keys(gameData.players).length}/${MAX_PLAYERS})`;
                     boostCooldownText.textContent = "Race hasn't started.";
+                    // Only the creator can start the game
                     if (gameData.creatorId === currentUserId) {
                         startGameBtn.classList.remove('hidden');
                     }
                 }
 
             }, (error) => {
+                // Error handling for snapshot listener
                 console.error("Error listening to game updates:", error);
                 showModal("Connection Issue", "Lost connection to the race. " + error.message);
             });
         }
 
+        /**
+         * Updates the visual representation of the race track and cat positions.
+         * @param {object} playersData - An object containing player data (id, position, catEmoji, etc.).
+         * @param {number} trackLength - The total length of the track.
+         */
         function updateRaceTrack(playersData, trackLength) {
-            raceTrackDiv.innerHTML = '<div class="finish-line"></div>'; // Clear previous cats
+            raceTrackDiv.innerHTML = '<div class="finish-line"></div>'; // Clear previous cats and redraw finish line
             const playersArray = Object.values(playersData || {});
-            playersArray.sort((a, b) => a.id.localeCompare(b.id)); // Consistent lane order
+            // Sort players by ID to ensure consistent lane order
+            playersArray.sort((a, b) => a.id.localeCompare(b.id));
 
             playersArray.forEach((player) => {
                 const laneDiv = document.createElement('div');
@@ -457,12 +558,15 @@
 
                 const catDiv = document.createElement('div');
                 catDiv.className = 'cat';
-                catDiv.textContent = player.catEmoji || '🐾';
+                catDiv.textContent = player.catEmoji || '🐾'; // Display cat emoji
                 if (player.id === currentUserId) {
-                    catDiv.classList.add('border-2', 'border-yellow-400', 'rounded-full', 'shadow-lg'); // Highlight current player's cat
+                    // Highlight the current player's cat
+                    catDiv.classList.add('border-2', 'border-yellow-400', 'rounded-full', 'shadow-lg');
                 }
+                // Calculate cat position on the track (0-100%)
                 const progressPercent = Math.min(player.position / trackLength, 1);
-                catDiv.style.left = `calc(${progressPercent * 100}% - ${progressPercent * 50}px)`;
+                // Adjust left position to keep the cat emoji fully visible at 100%
+                catDiv.style.left = `calc(${progressPercent * 100}% - ${progressPercent * catDiv.offsetWidth}px)`;
 
                 const catNameSpan = document.createElement('div');
                 catNameSpan.className = 'cat-name';
@@ -474,8 +578,12 @@
             });
         }
 
+        /**
+         * Handles the boost action for the current player's cat.
+         * Updates the cat's position and sets a cooldown.
+         */
         async function boostCat() {
-            if (!currentUserId || !currentGameId) return;
+            if (!currentUserId || !currentGameId) return; // Ensure user and game are active
             
             const gameRef = getGameDocRef(currentGameId);
             try {
@@ -495,25 +603,26 @@
                         throw new Error("Boost is still on cooldown!");
                     }
 
-                    const boostAmount = Math.floor(Math.random() * 12) + 6; // Boost 6-17
+                    const boostAmount = Math.floor(Math.random() * 12) + 6; // Boost by 6-17 units
                     let newPosition = player.position + boostAmount;
                     const updates = {
                         [`players.${currentUserId}.lastBoostTime`]: now,
                         [`players.${currentUserId}.position`]: newPosition
                     };
 
+                    // Check if the player has reached or crossed the finish line
                     if (newPosition >= gameData.trackLength && !gameData.winner) {
-                        updates[`players.${currentUserId}.position`] = gameData.trackLength;
-                        updates.winner = currentUserId;
-                        updates.status = "finished";
+                        updates[`players.${currentUserId}.position`] = gameData.trackLength; // Cap position at track length
+                        updates.winner = currentUserId; // Set current user as winner
+                        updates.status = "finished"; // Mark game as finished
                     }
-                    transaction.update(gameRef, updates);
+                    transaction.update(gameRef, updates); // Apply updates to Firestore
                 });
-                // setBoostCooldownUI will be called by the snapshot listener reacting to lastBoostTime update
+                // UI update for cooldown will be triggered by the onSnapshot listener
             } catch (error) {
                 console.error("Error boosting cat:", error);
                 showModal("Boost Error", error.message); // Show specific error from transaction
-                // Re-enable boost button only if error was not cooldown related and game still allows boosting
+                // Re-enable boost button if the error was not cooldown-related and game is still active
                 const gameDoc = await getDoc(gameRef);
                 if (gameDoc.exists()) {
                     const gameData = gameDoc.data();
@@ -525,43 +634,54 @@
             }
         }
 
-        function setBoostCooldownUI(lastBoostTime, gameData) { // Pass gameData
-            boostBtn.disabled = true;
-            if (boostCooldownTimeout) clearTimeout(boostCooldownTimeout);
+        /**
+         * Updates the boost cooldown UI, counting down until the boost is ready again.
+         * @param {number} lastBoostTime - The timestamp of the last boost.
+         * @param {object} gameData - The current game data.
+         */
+        function setBoostCooldownUI(lastBoostTime, gameData) {
+            boostBtn.disabled = true; // Disable boost button during cooldown
+            if (boostCooldownTimeout) clearTimeout(boostCooldownTimeout); // Clear any existing timeout
 
             const updateText = () => {
-                if (!gameData || !currentGameId) { // Game ended or left
+                // If game ended or left, stop updating cooldown
+                if (!gameData || !currentGameId) {
                     clearTimeout(boostCooldownTimeout);
                     return;
                 }
                 const timeSinceLastBoost = Date.now() - lastBoostTime;
                 const timeLeft = BOOST_COOLDOWN - timeSinceLastBoost;
 
-                // Fetch fresh game data for status check inside timeout, or rely on passed gameData
                 const currentStatus = gameData.status; 
                 const currentWinner = gameData.winner;
 
                 if (timeLeft <= 0) {
                     boostCooldownText.textContent = "Boost Ready!";
+                    // Re-enable boost button only if game is in progress, no winner, and current user is a player
                     if (currentStatus === "in-progress" && !currentWinner && gameData.players[currentUserId]) {
                        boostBtn.disabled = false;
                     } else {
                        if(currentWinner) boostCooldownText.textContent = "Race Over!";
                        else if (currentStatus !== "in-progress") boostCooldownText.textContent = "Race not active.";
                     }
-                    clearTimeout(boostCooldownTimeout);
+                    clearTimeout(boostCooldownTimeout); // Clear timeout once cooldown is over
                 } else {
                     boostCooldownText.textContent = `Boost in ${(timeLeft / 1000).toFixed(1)}s`;
-                    boostCooldownTimeout = setTimeout(updateText, 100);
+                    boostCooldownTimeout = setTimeout(updateText, 100); // Update every 100ms
                 }
             };
-            updateText();
+            updateText(); // Initial call to start the countdown
         }
 
+        /**
+         * Handles a player leaving the current game.
+         * Updates Firestore to remove the player and deletes the game if no players remain.
+         * Transfers creator status if the current creator leaves.
+         */
         async function leaveCurrentGame() {
-            if (!currentUserId || !currentGameId) return;
+            if (!currentUserId || !currentGameId) return; // Ensure user and game are active
             console.log(`Player ${currentUserId} leaving game ${currentGameId}`);
-            if (unsubscribeGameListener) { unsubscribeGameListener(); unsubscribeGameListener = null; }
+            if (unsubscribeGameListener) { unsubscribeGameListener(); unsubscribeGameListener = null; } // Unsubscribe from game updates
 
             try {
                 const gameRef = getGameDocRef(currentGameId);
@@ -570,18 +690,20 @@
                     if (gameDoc.exists()) {
                         const gameData = gameDoc.data();
                         const updatedPlayers = { ...gameData.players };
-                        delete updatedPlayers[currentUserId];
+                        delete updatedPlayers[currentUserId]; // Remove current user from players map
                         
+                        // Remove current user from the list of original player IDs
                         const updatedOriginalPlayerIds = (gameData.originalPlayerIds || []).filter(id => id !== currentUserId);
 
                         if (Object.keys(updatedPlayers).length === 0) {
+                            // If no players left, delete the game
                             transaction.delete(gameRef);
-                            console.log(`Game ${currentGameId} deleted.`);
+                            console.log(`Game ${currentGameId} deleted as no players remain.`);
                         } else {
                             let newCreatorId = gameData.creatorId;
+                            // If the creator leaves and there are other original players, assign a new creator
                             if (gameData.creatorId === currentUserId && updatedOriginalPlayerIds.length > 0) {
-                                // If creator leaves, assign a new creator from original players if possible
-                                newCreatorId = updatedOriginalPlayerIds[0]; 
+                                newCreatorId = updatedOriginalPlayerIds[0]; // Assign the first remaining original player as new creator
                                 console.log(`New creator assigned: ${newCreatorId}`);
                             } else if (updatedOriginalPlayerIds.length === 0) {
                                 // If no original players left (e.g. only creator was there), effectively no creator
@@ -591,235 +713,254 @@
                             transaction.update(gameRef, { 
                                 players: updatedPlayers,
                                 originalPlayerIds: updatedOriginalPlayerIds,
-                                creatorId: newCreatorId 
+                                creatorId: newCreatorId // Update creator ID
                             });
                         }
                     }
                 });
             } catch (error) {
                 console.error("Error leaving game:", error);
+                showModal("Leave Game Error", "Could not leave race. " + error.message);
             } finally {
-                resetRaceState();
+                resetRaceState(); // Reset local game state and switch to setup screen
             }
         }
         
+        /**
+         * Handles starting the race. Only the game creator can start it.
+         */
         async function startGameHandler() {
-            if (!currentUserId || !currentGameId) return;
+            if (!currentUserId || !currentGameId) {
+                showModal("Error", "Please join or create a game first to start.");
+                return;
+            }
+
+            // Immediately disable the button to prevent multiple clicks
+            startGameBtn.disabled = true;
+            startGameBtn.textContent = "Starting...";
+
             const gameRef = getGameDocRef(currentGameId);
             try {
-                const gameDoc = await getDoc(gameRef);
-                if (gameDoc.exists() && gameDoc.data().creatorId === currentUserId && gameDoc.data().status === "waiting") {
-                    await updateDoc(gameRef, { status: "in-progress" });
-                    raceMessages.textContent = "Race Started by Creator!";
-                    startGameBtn.classList.add('hidden');
-                } else {
-                    showModal("Start Error", "Only the creator can start a waiting game.");
-                }
+                await runTransaction(db, async (transaction) => {
+                    const gameDoc = await transaction.get(gameRef);
+                    if (!gameDoc.exists()) {
+                        throw new Error("Race not found!");
+                    }
+
+                    const gameData = gameDoc.data();
+                    const playerCount = Object.keys(gameData.players).length;
+
+                    if (gameData.creatorId !== currentUserId) {
+                        throw new Error("Only the race creator can start the race.");
+                    }
+                    if (gameData.status !== "waiting") {
+                        throw new Error("Race is not in 'waiting' status. Current status: " + gameData.status);
+                    }
+                    // New logic: Allow single player to start
+                    if (playerCount > 1 || (playerCount === 1 && gameData.creatorId === currentUserId)) {
+                        console.log("Starting race with current players.");
+                    } else {
+                        throw new Error("Cannot start race with current conditions.");
+                    }
+
+                    // Reset all player positions and boost cooldowns
+                    const updatedPlayers = {};
+                    for (const playerId in gameData.players) {
+                        updatedPlayers[playerId] = {
+                            ...gameData.players[playerId],
+                            position: 0, // Reset position for all players
+                            lastBoostTime: null // Reset cooldown for all players
+                        };
+                    }
+
+                    transaction.update(gameRef, {
+                        status: "in-progress", // Change game status to in-progress
+                        players: updatedPlayers,
+                        winner: null // Clear any previous winner
+                    });
+                    console.log(`Game ${currentGameId} started by ${currentUserId}`);
+                });
+                // If successful, the onSnapshot listener will handle re-enabling/hiding the button
             } catch (error) {
                 console.error("Error starting game:", error);
-                showModal("Error", "Could not start race. " + error.message);
+                showModal("Start Race Error", error.message);
+                // Re-enable the button only if the error was not due to already being in-progress
+                // and the game is still in a state where it could be started by this user.
+                const gameDoc = await getDoc(gameRef); // Fetch fresh state
+                if (gameDoc.exists()) {
+                    const gameData = gameDoc.data();
+                    if (gameData.status === 'waiting' && gameData.creatorId === currentUserId) {
+                        startGameBtn.disabled = false;
+                        startGameBtn.textContent = "Start Race!";
+                    }
+                }
             }
         }
 
+        /**
+         * Handles the "Play Again" action. Only the game creator can initiate this.
+         * Resets the game state for another round.
+         */
         async function playAgainHandler() {
-            if (!currentUserId || !currentGameId) return;
-            playAgainBtn.disabled = true;
-            playAgainBtn.textContent = "Resetting...";
+            if (!currentUserId || !currentGameId) {
+                showModal("Error", "Please join or create a game first.");
+                return;
+            }
 
+            const gameRef = getGameDocRef(currentGameId);
             try {
-                const gameRef = getGameDocRef(currentGameId);
                 await runTransaction(db, async (transaction) => {
                     const gameDoc = await transaction.get(gameRef);
-                    if (!gameDoc.exists()) throw new Error("Race not found.");
+                    if (!gameDoc.exists()) {
+                        throw new Error("Race not found!");
+                    }
+
                     const gameData = gameDoc.data();
 
                     if (gameData.creatorId !== currentUserId) {
-                        throw new Error("Only the original game creator can initiate a 'Play Again'.");
+                        throw new Error("Only the race creator can restart the race.");
                     }
                     if (gameData.status !== "finished") {
-                        throw new Error("Can only restart a finished game.");
+                        throw new Error("Race must be finished to play again.");
                     }
 
-                    const newPlayersData = {};
-                    // Reset only original players who are still in the 'players' map (or all original if desired)
-                    (gameData.originalPlayerIds || []).forEach(pid => {
-                        if (gameData.players[pid]) { // Ensure player still exists in current game players map
-                             newPlayersData[pid] = {
-                                ...gameData.players[pid], // Keep name, emoji etc.
-                                position: 0,
-                                lastBoostTime: null,
-                            };
-                        } else { // If an original player left, re-add them with default names if needed
-                            // Or, only include original players who are *still* in the gameData.players list.
-                            // For simplicity, let's assume originalPlayerIds are the ones to reset.
-                            // If they had left, their data might be stale.
-                            // Better: only reset players currently in gameData.players who were also in originalPlayerIds
-                             newPlayersData[pid] = { // Fallback if player data was lost somehow
-                                id: pid, name: "Player " + pid.substring(0,4), catName: "Cat " + pid.substring(0,4),
-                                catEmoji: CAT_EMOJIS[Math.floor(Math.random() * CAT_EMOJIS.length)],
-                                position: 0, lastBoostTime: null
-                            };
-                        }
-                    });
-                     if (Object.keys(newPlayersData).length === 0 && gameData.originalPlayerIds.length > 0) {
-                        // This case might happen if all original players left and then creator tried to restart
-                        // For simplicity, we'll just ensure the creator is re-added if they were an original player
-                        if (gameData.originalPlayerIds.includes(currentUserId) && !newPlayersData[currentUserId]) {
-                             newPlayersData[currentUserId] = {
-                                id: currentUserId, name: playerNameInput.value || "Player " + currentUserId.substring(0,4), 
-                                catName: catNameInput.value || "Cat " + currentUserId.substring(0,4),
-                                catEmoji: selectedCatEmoji, position: 0, lastBoostTime: null
+                    const updatedPlayers = {};
+                    // Only include players who were part of the original game (not just spectators who joined mid-race)
+                    const activePlayerIds = gameData.originalPlayerIds || [];
+
+                    for (const playerId of activePlayerIds) {
+                        if (gameData.players[playerId]) {
+                            updatedPlayers[playerId] = {
+                                ...gameData.players[playerId],
+                                position: 0, // Reset position
+                                lastBoostTime: null // Reset cooldown
                             };
                         }
                     }
-
 
                     transaction.update(gameRef, {
-                        status: "waiting",
-                        winner: null,
-                        players: newPlayersData,
-                        // creatorId remains the same
-                        // originalPlayerIds remain the same for the next "play again"
+                        status: "waiting", // Reset to waiting for new players or re-ready
+                        players: updatedPlayers,
+                        winner: null, // Clear previous winner
+                        createdAt: serverTimestamp() // Update timestamp for sorting in list
                     });
+                    console.log(`Game ${currentGameId} reset for play again by ${currentUserId}`);
                 });
-                raceMessages.textContent = "New race ready! Waiting for creator to start.";
             } catch (error) {
-                console.error("Error during Play Again:", error);
+                console.error("Error playing again:", error);
                 showModal("Play Again Error", error.message);
-            } finally {
-                 playAgainBtn.disabled = false;
-                 playAgainBtn.textContent = "Play Again?";
             }
         }
 
+        /**
+         * Loads initial player data (name, cat name, selected emoji) from local storage.
+         * Also starts listening for available games.
+         */
+        async function loadInitialData() {
+            // Attempt to load player and cat name from local storage if available
+            const savedPlayerName = localStorage.getItem('playerName');
+            const savedCatName = localStorage.getItem('catName');
+            const savedCatEmojiIndex = localStorage.getItem('catEmojiIndex');
 
-        function resetRaceState() {
-            currentGameId = null;
-            raceTrackDiv.innerHTML = '<div class="finish-line"></div>';
-            gameNameDisplay.textContent = "Race";
-            boostBtn.disabled = true;
-            boostCooldownText.textContent = "";
-            raceMessages.textContent = "";
-            startGameBtn.classList.add('hidden');
-            playAgainBtn.classList.add('hidden');
-            if (boostCooldownTimeout) clearTimeout(boostCooldownTimeout);
-        }
-
-        function loadInitialData() {
-            if (!currentUserId) return;
-            listenToAvailableGames();
-            playerNameInput.value = localStorage.getItem('catRacePlayerName') || '';
-            catNameInput.value = localStorage.getItem('catRaceCatName') || '';
-            const storedEmojiIndex = parseInt(localStorage.getItem('catRaceEmojiIndex') || '0');
-            currentEmojiIndex = (storedEmojiIndex >= 0 && storedEmojiIndex < CAT_EMOJIS.length) ? storedEmojiIndex : 0;
-            updateSelectedCatEmojiDisplay();
-        }
-
-        function listenToAvailableGames() {
-            if (unsubscribeGamesListListener) unsubscribeGamesListListener();
-            
-            const gamesQuery = query(getGamesCollectionRef()); // Listen to all games to show status correctly
-            unsubscribeGamesListListener = onSnapshot(gamesQuery, (querySnapshot) => {
-                gamesListDiv.innerHTML = '';
-                if (querySnapshot.empty) {
-                    gamesListDiv.innerHTML = '<p class="text-slate-500 p-2">No races found. Create one to start the fun!</p>';
-                    return;
+            if (savedPlayerName) {
+                playerNameInput.value = savedPlayerName;
+            } else {
+                playerNameInput.value = "Player " + currentUserId.substring(0, 4);
+            }
+            if (savedCatName) {
+                catNameInput.value = savedCatName;
+            } else {
+                catNameInput.value = "Cat " + currentUserId.substring(0, 4);
+            }
+            if (savedCatEmojiIndex !== null) {
+                currentEmojiIndex = parseInt(savedCatEmojiIndex, 10);
+                // Ensure the loaded index is within valid bounds
+                if (currentEmojiIndex >= CAT_EMOJIS.length || currentEmojiIndex < 0) {
+                    currentEmojiIndex = 0; // Fallback to first emoji if out of bounds
                 }
-                querySnapshot.forEach((doc) => {
-                    const game = doc.data();
-                    const gameId = doc.id;
-                    const playerCount = Object.keys(game.players || {}).length;
+            }
+            updateSelectedCatEmojiDisplay(); // Update the emoji display
 
-                    const gameEntry = document.createElement('div');
-                    gameEntry.className = 'p-3 bg-white hover:bg-cyan-50 rounded-lg shadow-sm border border-slate-200 flex justify-between items-center gap-2';
-
-                    const gameInfo = document.createElement('div');
-                    gameInfo.innerHTML = `
-                        <span class="font-semibold text-cyan-800">${game.name}</span>
-                        <span class="text-sm text-slate-600 ml-2">(${playerCount} player${playerCount === 1 ? '' : 's'})</span>
-                        <span class="text-xs text-gray-500 ml-2 font-medium">[${game.status.toUpperCase()}]</span>
-                    `;
-                    gameEntry.appendChild(gameInfo);
-
-                    const joinBtn = document.createElement('button');
-                    joinBtn.className = 'btn text-sm py-1 px-3';
-
-                    if (game.status === "waiting") {
-                        if (playerCount >= MAX_PLAYERS) {
-                            joinBtn.textContent = "Full";
-                            joinBtn.disabled = true;
-                            joinBtn.classList.add('btn-slate', 'opacity-50');
-                        } else {
-                            joinBtn.textContent = "Join";
-                            joinBtn.classList.add('btn-green');
-                        }
-                    } else if (game.status === "in-progress") {
-                        joinBtn.textContent = game.players[currentUserId] ? "Re-Join" : "Spectate";
-                        joinBtn.classList.add('btn-yellow');
-                    } else { // Finished
-                        joinBtn.textContent = "Finished";
-                        joinBtn.disabled = true;
-                        joinBtn.classList.add('btn-slate', 'opacity-50');
-                    }
-                    
-                    if (!joinBtn.disabled) {
-                        joinBtn.onclick = () => {
-                            if (playerNameInput.value.trim() && catNameInput.value.trim()){
-                                joinGame(gameId);
-                            } else {
-                                showModal("Name Required", "Please set your name and cat's name first!");
-                            }
-                        };
-                    }
-                    gameEntry.appendChild(joinBtn);
-                    gamesListDiv.appendChild(gameEntry);
-                });
-            }, (error) => {
-                console.error("Error fetching games list:", error);
-                gamesListDiv.innerHTML = '<p class="text-red-500 p-2">Error loading races. Please refresh.</p>';
-            });
+            // Start listening to available games once authenticated
+            listenToAvailableGames();
         }
+
+        /**
+         * Initializes Firebase app, authentication, and Firestore.
+         * Handles user authentication state changes (anonymous or custom token).
+         */
+        async function initializeFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Persist authentication state across browser sessions
+                await setPersistence(auth, browserLocalPersistence);
+
+                // Listen for authentication state changes
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        userIdDisplay.textContent = currentUserId;
+                        console.log("User authenticated with UID:", currentUserId);
+                        loadInitialData(); // Load player data and start listening for games
+                        showScreen('setup'); // Show the setup screen
+                    } else {
+                        console.log("User not signed in, attempting auth.");
+                        // Sign in with custom token if available, otherwise anonymously
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                    // Hide loading screen once authentication is attempted
+                    loadingScreen.classList.add('opacity-0');
+                    setTimeout(() => loadingScreen.classList.add('hidden'), 300);
+                    gameContainer.classList.remove('hidden'); // Show the main game container
+                });
+            } catch (error) {
+                console.error("Firebase initialization error:", error);
+                showModal("Initialization Error", "Could not initialize the game. Please try again. Details: " + error.message);
+                loadingScreen.innerHTML = `<p class="text-red-500 text-xl p-4">Error loading game: ${error.message}</p>`;
+            }
+        }
+
 
         // --- Event Listeners ---
         createGameBtn.addEventListener('click', createGame);
         boostBtn.addEventListener('click', boostCat);
-        leaveGameBtn.addEventListener('click', async () => { await leaveCurrentGame(); showScreen('setup'); });
+        leaveGameBtn.addEventListener('click', leaveCurrentGame);
         startGameBtn.addEventListener('click', startGameHandler);
         playAgainBtn.addEventListener('click', playAgainHandler);
 
+        // Event listeners for changing cat emoji and saving to local storage
         prevCatEmojiBtn.addEventListener('click', () => {
             currentEmojiIndex = (currentEmojiIndex - 1 + CAT_EMOJIS.length) % CAT_EMOJIS.length;
             updateSelectedCatEmojiDisplay();
-            localStorage.setItem('catRaceEmojiIndex', currentEmojiIndex.toString());
+            localStorage.setItem('catEmojiIndex', currentEmojiIndex.toString());
         });
+
         nextCatEmojiBtn.addEventListener('click', () => {
             currentEmojiIndex = (currentEmojiIndex + 1) % CAT_EMOJIS.length;
             updateSelectedCatEmojiDisplay();
-            localStorage.setItem('catRaceEmojiIndex', currentEmojiIndex.toString());
+            localStorage.setItem('catEmojiIndex', currentEmojiIndex.toString());
         });
 
-        playerNameInput.addEventListener('change', () => localStorage.setItem('catRacePlayerName', playerNameInput.value));
-        catNameInput.addEventListener('change', () => localStorage.setItem('catRaceCatName', catNameInput.value));
-
-        // --- Start Application ---
-        initializeFirebase().then(() => {
-            // Optional: Start ambient movement if desired, after Firebase is ready
-            // setTimeout(ambientCatMovement, 7000); // Disabled by default
-        });
-        
-        // Note: ambientCatMovement function was removed for this version to simplify and focus on new features.
-        // It can be added back if desired, similar to previous versions.
-
-        window.addEventListener('beforeunload', async (event) => {
-            // Firestore typically handles disconnections well with presence if implemented.
-            // Forcing a leave here can be unreliable.
-            // Consider it a "best effort" or rely on game cleanup for inactive players.
-            if (currentGameId && currentUserId) {
-                console.log("Page unloading, attempting to clean up game state if necessary.");
-                // await leaveCurrentGame(); // This might not complete fully or reliably.
-            }
+        // Save player and cat name to local storage on input change
+        playerNameInput.addEventListener('input', () => {
+            localStorage.setItem('playerName', playerNameInput.value);
         });
 
+        catNameInput.addEventListener('input', () => {
+            localStorage.setItem('catName', catNameInput.value);
+        });
+
+        // --- Initial Load ---
+        // Initialize Firebase and start the application when the window loads
+        window.onload = initializeFirebase;
     </script>
 </body>
 </html>
+�
