@@ -8,12 +8,17 @@
     <style>
         body {
             margin: 0;
-            padding: 20px;
+            padding: 0;
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            height: 100vh;
             color: white;
-            overflow-x: hidden;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         /* Loading Screen Styles */
@@ -148,58 +153,85 @@
 
         .main-game {
             display: none;
+            width: 100%;
+            height: 100vh;
         }
 
         .game-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 30px;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            backdrop-filter: none;
+            box-shadow: none;
+            border-radius: 0;
+        }
+
+        .game-header {
+            text-align: center;
+            padding: 20px 10px;
+            background: rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
         }
 
         h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
+            margin: 0;
+            font-size: clamp(1.8em, 5vw, 3em);
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .race-track {
-            background: #2d3748;
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 15px;
             padding: 20px;
             margin: 20px 0;
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 100%;
         }
 
         .lane {
-            height: 80px;
-            margin: 10px 0;
-            background: rgba(255, 255, 255, 0.1);
+            height: clamp(60px, 8vh, 80px);
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
             position: relative;
             display: flex;
             align-items: center;
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
         }
 
         .cat {
-            width: 60px;
-            height: 60px;
+            width: clamp(40px, 6vw, 60px);
+            height: clamp(40px, 6vw, 60px);
             position: absolute;
             left: 10px;
-            font-size: 40px;
+            font-size: clamp(24px, 4vw, 40px);
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
             border-radius: 50%;
             transition: left 0.1s ease-out;
             z-index: 10;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .finish-line {
@@ -219,34 +251,39 @@
         }
 
         .cat-info {
-            margin-left: 80px;
+            margin-left: clamp(60px, 8vw, 80px);
             font-weight: bold;
-            font-size: 1.1em;
+            font-size: clamp(0.9em, 2.5vw, 1.1em);
         }
 
         .controls {
             text-align: center;
-            margin: 30px 0;
+            padding: 20px 10px;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
         }
 
         .bet-section {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             justify-content: center;
             flex-wrap: wrap;
-            margin: 20px 0;
+            margin: 15px 0;
+            padding: 0 10px;
         }
 
         .bet-button {
-            padding: 12px 24px;
+            padding: clamp(8px, 2vh, 12px) clamp(16px, 4vw, 24px);
             border: none;
             border-radius: 25px;
-            font-size: 1em;
+            font-size: clamp(0.8em, 2.2vw, 1em);
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
             background: rgba(255, 255, 255, 0.9);
             color: #333;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .bet-button:hover {
@@ -260,19 +297,29 @@
             transform: scale(1.05);
         }
 
-        .start-button {
-            padding: 15px 40px;
-            font-size: 1.3em;
-            background: linear-gradient(45deg, #48bb78, #38a169);
-            color: white;
+        .start-button, .reset-button {
+            padding: clamp(12px, 2.5vh, 15px) clamp(30px, 6vw, 40px);
+            font-size: clamp(1em, 3vw, 1.3em);
             border: none;
             border-radius: 30px;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin: 0 10px;
+            margin: 0 5px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .start-button:hover {
+        .start-button {
+            background: linear-gradient(45deg, #48bb78, #38a169);
+            color: white;
+        }
+
+        .reset-button {
+            background: linear-gradient(45deg, #e53e3e, #c53030);
+            color: white;
+        }
+
+        .start-button:hover, .reset-button:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         }
@@ -283,41 +330,35 @@
             transform: none;
         }
 
-        .reset-button {
-            padding: 15px 40px;
-            font-size: 1.3em;
-            background: linear-gradient(45deg, #e53e3e, #c53030);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 0 10px;
-        }
-
-        .reset-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        }
-
         .game-status {
             text-align: center;
-            font-size: 1.3em;
-            margin: 20px 0;
+            font-size: clamp(1em, 3vw, 1.3em);
+            margin: 15px 0;
             font-weight: bold;
-            min-height: 30px;
+            min-height: 25px;
         }
 
         .winner-announcement {
             background: linear-gradient(45deg, #ffd700, #ffed4e);
             color: #333;
-            padding: 20px;
+            padding: clamp(15px, 3vh, 20px);
             border-radius: 15px;
             text-align: center;
-            font-size: 1.5em;
+            font-size: clamp(1.1em, 3vw, 1.5em);
             font-weight: bold;
-            margin: 20px 0;
+            margin: 15px 10px;
             animation: pulse 2s infinite;
+            backdrop-filter: blur(10px);
+        }
+
+        .score {
+            text-align: center;
+            font-size: clamp(1em, 2.8vw, 1.2em);
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
         }
 
         @keyframes pulse {
@@ -326,24 +367,43 @@
             100% { transform: scale(1); }
         }
 
-        .score {
-            text-align: center;
-            font-size: 1.2em;
-            margin: 20px 0;
-        }
-
         @media (max-width: 768px) {
-            .game-container {
-                padding: 15px;
+            .game-content {
+                padding: 10px;
             }
             
             .bet-section {
                 flex-direction: column;
                 align-items: center;
+                gap: 8px;
             }
             
             .bet-button {
-                width: 200px;
+                width: 90%;
+                max-width: 300px;
+            }
+
+            .race-track {
+                padding: 15px;
+                margin: 15px 0;
+            }
+
+            .lane {
+                margin: 5px 0;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .game-header {
+                padding: 10px;
+            }
+            
+            .controls {
+                padding: 10px;
+            }
+            
+            .race-track {
+                margin: 10px 0;
             }
         }
     </style>
@@ -437,7 +497,6 @@
                 loadingScreen.style.display = 'none';
                 mainGame.style.display = 'block';
                 mainGame.style.animation = 'slideInUp 0.8s ease-out';
-                document.body.style.padding = '20px';
             }, 800);
         }
         let selectedCat = null;
